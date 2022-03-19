@@ -1,0 +1,14 @@
+{
+  "name": "CommBot",
+  "version": "1.0.0",
+  "description": "A Discord bot used to help manage artwork commissions!",
+  "main": "bot.js",
+  "author": "Christian Walton",
+  "dependencies": {
+    "discord.io": "https://github.com/woor/discord.io/tarball/gateway_v6",
+    "discord.js": "^13.6.0",
+    "dotenv": "^16.0.0",
+    "node": "^17.7.1",
+    "winston": "^3.6.0"
+  }
+}
