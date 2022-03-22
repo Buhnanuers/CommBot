@@ -1,6 +1,5 @@
 const { channel } = require("diagnostics_channel");
 const Discord = require("discord.io");
-const { ButtonInteraction } = require("discord.js");
 const logger = require("winston");
 const auth = require("./auth.json");
 const db = require("quick.db");
