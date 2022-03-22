@@ -12,14 +12,6 @@ logger.add(new logger.transports.Console(), {
 });
 logger.level = "debug";
 
-// Initialize data structure to hold commission queue
-// Comission element arguments:
-// 1. Twitch username of commissioner
-// 2. Amount paid ($ will be added to amounts if not provided)
-// 3. Type of commission ()
-// Example: !commadd buhnaneurs $50 Emote
-// let commissions = [];
-
 // Initialize Discord bot
 let bot = new Discord.Client({
   token: auth.token,
