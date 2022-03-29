@@ -3,6 +3,7 @@ const Discord = require("discord.io");
 const logger = require("winston");
 const auth = require("./auth.json");
 const db = require("quick.db");
+const { Message } = require("discord.js");
 
 // Configure logger settings
 logger.remove(logger.transports.Console);
@@ -16,6 +17,9 @@ let bot = new Discord.Client({
   token: auth.token,
   autorun: true,
 });
+
+// Boolean flag to keep track of nested commands
+let in_progress = false;
 
 bot.on("ready", function (evt) {
   logger.info("Connected");
@@ -33,6 +37,14 @@ bot.on("message", function (user, userID, channelID, message, evt) {
     args = args.splice(1);
     switch (cmd) {
       // Display help commands
+      case "CBtreat": {
+        bot.sendMessage({
+          to: channelID,
+          message: "Yum! Thank you so much for the treat!"
+        });
+        break;
+      }
+
       case "CBhelp": {
         if (args.length === 0) {
           bot.sendMessage({
@@ -43,6 +55,7 @@ bot.on("message", function (user, userID, channelID, message, evt) {
               "!CBhelp CBtype (list common types of commissions)\n" +
               "!CBhelp CBremovenext (help with formatting the command)\n" +
               "!CBhelp CBremove (help with fomatting the command)\n" +
+              "!CBhelp CBedit (help with formatting the command)\n" +
               "```",
           });
         }
@@ -78,6 +91,22 @@ bot.on("message", function (user, userID, channelID, message, evt) {
                 "Rendered```" +
                 "Type of framing and type of coloring can be of any combination, for example:" +
                 "```Emote/Colored\nFull-Body/Line-Art\nHeadshot/Rendered```",
+            });
+
+            break;
+          }
+
+          case "CBedit": {
+            bot.sendMessage({
+              to: channelID,
+              message:
+                "This command allows you to edit an existing commission! Simply enter '!CBedit w x y z', " +
+                "where 'w' is the index of the commission you wish to change,\n" +
+                "x is the Twitch username of the commissioner,\n" +
+                "y is the amount paid,\n" +
+                "and z is the type of commission purchased.\n" +
+                "For example, to edit the first commission:" +
+                "```!CBedit 1 CoolTwitchUser $100 Colored/Full-body```",
             });
 
             break;
@@ -156,6 +185,65 @@ bot.on("message", function (user, userID, channelID, message, evt) {
         break;
       }
 
+      // Edit an existing commission
+      case "CBedit": {
+        const queue = db.get(`comm_${serverID}`);
+
+        // Error checking
+        if (args.length < 4) {
+          bot.sendMessage({
+            to: channelID,
+            message: `Formatting error, too few arguments! Use "!CBhelp CBedit" for help with formatting!`,
+          });
+          break;
+        }
+
+        // Error checking
+        if (args.length > 4) {
+          bot.sendMessage({
+            to: channelID,
+            message: `Formatting error, too many arguments! Use "!CBhelp CBedit" for help with formatting!`,
+          });
+          break;
+        }
+
+        // Error checking
+        if (isNaN(args[0])) {
+          bot.sendMessage({
+            to: channelID,
+            message: `Formatting error, argument is not a number! Use "!CBhelp CBedit" for help with formatting!`,
+          });
+          break;
+        }
+
+        // First, check if the element to change exists
+        if (args[0] - 1 > queue.length) {
+          bot.sendMessage({
+            to: channelID,
+            message: `Error, ${args[0]} does not exist in the queue!`,
+          });
+          break;
+        } else {
+          console.log(queue + "\n" + queue[args[0] - 1] + "\n" + args[1]);
+
+          // If it exists, implement the users' changes
+          queue[args[0] - 1].username = args[1].toString();
+          queue[args[0] - 1].amount = args[2].toString();
+          queue[args[0] - 1].type = args[3].toString();
+
+          // Update the database table with the new queue
+          db.set(`comm_${serverID}`, queue);
+
+          // Report back a successful edit
+          bot.sendMessage({
+            to: channelID,
+            message: `The entry at index ${args[0]} has been successfully changed!`,
+          });
+
+          break;
+        }
+      }
+
       // Remove next element from the queue
       case "CBremovenext": {
         const queue = db.get(`comm_${serverID}`);
@@ -185,6 +273,7 @@ bot.on("message", function (user, userID, channelID, message, evt) {
         // Update the database table with the new queue
         db.set(`comm_${serverID}`, queue);
 
+        // Report back a successful removal
         bot.sendMessage({
           to: channelID,
           message: `Commission has been removed from the front of the queue!`,
